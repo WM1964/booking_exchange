@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>BudgetView</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#E0701A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="BudgetView" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <style>
+    :root {
+      --marke: #E0701A;
+      --marke-hell: #FCE9D8;
+      --text: #1f2421;
+      --text-leise: #6b726d;
+      --flaeche: #f5f6f5;
+      --erfolg: #2e9e57;
+      --fehler: #d64545;
+      --ausgabe: #d64545;
+      --ausgabe-hell: #fbe9e9;
+      --einnahme: #2e9e57;
+      --einnahme-hell: #e7f4ec;
+      --nav-inaktiv: #9aa19c;
+      --rand: #e2e5e2;
+      --feld-rand: #cdd2ce;
+      --feld-bg: #eef0ef;
+      --inhalt-bg: #FDF0E4;
+      /* Zebra-Farben der Inbox (ueber Parameter anpassbar) */
+      --zebra-hell: #ffffff;
+      --zebra-dunkel: #f2f4f2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: #ffffff;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100%; }
+
+    /* Installations-Banner (Etappe F2b) */
+    .install-banner { display: flex; align-items: center; gap: 10px; background: var(--marke-hell); border-bottom: 0.5px solid #cdd8d2; padding: 12px 14px; }
+    .install-banner .install-icon { width: 24px; height: 24px; color: var(--marke); flex-shrink: 0; }
+    .install-text { flex: 1; min-width: 0; }
+    .install-titel { font-size: 13px; font-weight: 600; color: var(--text); }
+    .install-sub { font-size: 11px; color: var(--text-leise); line-height: 1.3; }
+    .install-btn { padding: 7px 14px; background: var(--marke); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+    .install-schliessen { background: none; border: none; font-size: 20px; color: var(--text-leise); cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+    .inhalt { flex: 1; overflow-y: auto; padding-top: env(safe-area-inset-top); background: var(--inhalt-bg); }
+
+    .ansicht { display: none; padding: 16px; }
+    .ansicht.aktiv { display: block; }
+
+    .ansicht-titel { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+
+    /* ---- Formularelemente ---- */
+    .feld-label { display: block; font-size: 14px; font-weight: 700; color: #000; margin-bottom: 4px; }
+    .feld {
+      width: 100%; height: 44px; padding: 0 12px; margin-bottom: 12px;
+      border: 0.5px solid var(--feld-rand); border-radius: 8px;
+      font-size: 15px; color: var(--text); background-color: var(--feld-bg);
+      -webkit-appearance: none; appearance: none;
+    }
+    select.feld {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b726d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+    }
+    .feld:disabled { background: var(--flaeche); color: var(--nav-inaktiv); }
+
+    /* Einnahme/Ausgabe-Umschalter */
+    .typ-schalter { display: flex; gap: 8px; margin-bottom: 14px; }
+    .typ-knopf {
+      flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 14px; font-weight: 500; background: var(--flaeche); color: var(--nav-inaktiv);
+    }
+    .typ-knopf.aktiv-ausgabe { background: var(--ausgabe-hell); color: var(--ausgabe); font-weight: 700; }
+    .typ-knopf.aktiv-einnahme { background: var(--einnahme-hell); color: var(--einnahme); font-weight: 700; }
+
+    .betrag-wrap { position: relative; }
+    .betrag-wrap .waehrung {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-leise); font-size: 15px; margin-top: -6px;
+    }
+
+    /* ---- Belege / Fotos ---- */
+    .foto-btn {
+      width: 100%; margin: 4px 0 12px; padding: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: #fff; border: 1px dashed var(--feld-rand); border-radius: 8px;
+      font-size: 14px; color: var(--text); cursor: pointer;
+    }
+    .foto-btn svg { width: 18px; height: 18px; color: var(--marke); }
+    .foto-vorschau { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .foto-thumb { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; }
+    .foto-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .foto-thumb-loesch {
+      position: absolute; top: -6px; right: -6px;
+      width: 22px; height: 22px; border: none; border-radius: 50%;
+      background: var(--fehler); color: #fff; font-size: 15px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .knopf-primaer {
+      width: 100%; padding: 14px; margin-top: 4px;
+      background: var(--marke); color: #fff; border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Bearbeiten-Modus: Abbrechen pink (links), Speichern lightgreen (rechts) */
+    #bearbeiten-buttons { display: flex; gap: 12px; margin-top: 4px; }
+    .knopf-abbrechen, .knopf-speichern-edit {
+      flex: 1; padding: 14px; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; color: #000; cursor: pointer;
+    }
+    .knopf-abbrechen { background: pink; }
+    .knopf-speichern-edit { background: lightgreen; }
+
+    /* ---- Hinweis "keine Stammdaten" ---- */
+    .hinweis-box { text-align: center; padding: 48px 24px; }
+    .hinweis-box h2 { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+    .hinweis-box p { font-size: 14px; color: var(--text-leise); line-height: 1.6; margin-bottom: 20px; }
+    .knopf-sekundaer {
+      display: inline-block; padding: 12px 22px;
+      background: var(--marke); color: #fff; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+    }
+
+    /* ---- Inbox ---- */
+    .inbox-anzahl { font-size: 13px; color: var(--text-leise); margin-bottom: 12px; }
+    .inbox-liste { border: 0.5px solid var(--rand); border-radius: 10px; overflow: hidden; }
+    .inbox-zeile { display: flex; align-items: center; gap: 10px; padding: 12px; }
+    .inbox-zeile:nth-child(odd)  { background: var(--zebra-hell); }
+    .inbox-zeile:nth-child(even) { background: var(--zebra-dunkel); }
+    .inbox-info { flex: 1; min-width: 0; }
+    .inbox-titel-zeile { font-size: 14px; font-weight: 500; }
+    .inbox-detail { font-size: 12px; color: var(--text-leise); margin-top: 2px; }
+    .inbox-foto { display: inline-flex; align-items: center; gap: 3px; color: var(--marke); margin-left: 6px; }
+    .inbox-foto svg { width: 13px; height: 13px; }
+    .inbox-betrag { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .inbox-betrag.ausgabe { color: var(--ausgabe); }
+    .inbox-betrag.einnahme { color: var(--einnahme); }
+    .inbox-bearbeiten { background: none; border: none; cursor: pointer; padding: 6px; color: var(--marke); }
+    .inbox-bearbeiten svg { width: 20px; height: 20px; display: block; }
+    .inbox-loeschen { background: none; border: none; cursor: pointer; padding: 6px; color: var(--nav-inaktiv); }
+    .inbox-loeschen svg { width: 20px; height: 20px; display: block; }
+    .inbox-leer { text-align: center; padding: 48px 24px; color: var(--text-leise); font-size: 14px; }
+
+    /* ---- Navigationsleiste ---- */
+    .nav { display: flex; border-top: 0.5px solid var(--rand); padding-bottom: env(safe-area-inset-bottom); background: #fff; }
+    .nav-knopf {
+      flex: 1; background: none; border: none; cursor: pointer; padding: 8px 0 6px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 11px; color: var(--nav-inaktiv);
+    }
+    .nav-knopf svg { width: 24px; height: 24px; }
+    .nav-knopf.aktiv { color: var(--marke); font-weight: 600; }
+
+    /* ---- Export-Knopf (Inbox) ---- */
+    .inbox-export-btn {
+      width: 100%; margin-bottom: 14px; padding: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--marke); color: #fff; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .inbox-export-btn svg { width: 18px; height: 18px; }
+
+    /* ---- Passwort-Modal ---- */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 200;
+    }
+    .modal { width: 100%; max-width: 340px; background: #fff; border-radius: 14px; padding: 20px; }
+    .modal-titel { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .modal-titel svg { width: 20px; height: 20px; color: var(--marke); }
+    .modal-text { font-size: 13px; color: var(--text-leise); line-height: 1.5; margin-bottom: 14px; }
+    .modal-feld {
+      width: 100%; height: 44px; padding: 0 12px; margin-bottom: 10px;
+      border: 0.5px solid var(--feld-rand); border-radius: 8px; font-size: 15px;
+      -webkit-appearance: none; appearance: none;
+    }
+    .modal-fehler { font-size: 13px; color: var(--fehler); min-height: 18px; margin-bottom: 10px; }
+    .modal-hinweis { font-size: 13px; color: var(--marke); background: var(--marke-hell); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; line-height: 1.4; }
+    .modal-buttons { display: flex; gap: 12px; }
+    .modal-buttons button {
+      flex: 1; padding: 12px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; color: #000; cursor: pointer;
+    }
+    .modal-abbrechen { background: pink; }
+    .modal-ok { background: lightgreen; }
+
+    /* Export-Auswahl: Speichern + Teilen nebeneinander, Abbrechen darunter */
+    .modal-buttons-export { display: flex; gap: 10px; margin-bottom: 10px; }
+    .modal-speichern, .modal-teilen {
+      flex: 1; padding: 12px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .modal-speichern { background: lightgreen; color: #000; }
+    .modal-teilen { background: var(--marke); color: #fff; }
+    .modal-abbrechen-voll {
+      width: 100%; padding: 11px; background: pink; color: #000;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(20px);
+      max-width: 88%; padding: 12px 18px; border-radius: 10px;
+      color: #fff; font-size: 14px; text-align: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; z-index: 100;
+    }
+    .toast.sichtbar { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.erfolg { background: var(--erfolg); }
+    .toast.fehler { background: var(--fehler); }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <div id="install-banner" class="install-banner" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="install-icon"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v6M9 10h6"/></svg>
+      <div class="install-text">
+        <div class="install-titel" id="install_titel">Als App installieren</div>
+        <div class="install-sub" id="install_sub">Für schnellen Zugriff vom Startbildschirm</div>
+      </div>
+      <button class="install-btn" id="install-btn" type="button">Installieren</button>
+      <button class="install-schliessen" id="install-schliessen" type="button" aria-label="Schließen">×</button>
+    </div>
+    <div class="inhalt">
+
+      <!-- ===== Ansicht: Erfassen ===== -->
+      <section id="view-erfassen" class="ansicht aktiv">
+
+        <div id="erfassen-hinweis" class="hinweis-box" style="display:none;">
+          <h2 id="keine_sd_titel">Noch keine Stammdaten</h2>
+          <p id="keine_sd_text"></p>
+          <button class="knopf-sekundaer" id="zu-einstellungen-btn" type="button">Zu den Einstellungen</button>
+        </div>
+
+        <div id="erfassen-formular" style="display:none;">
+          <div class="ansicht-titel" id="erfassen_titel">Erfassen</div>
+
+          <div class="typ-schalter">
+            <button class="typ-knopf" id="typ-ausgabe" type="button">Ausgabe</button>
+            <button class="typ-knopf" id="typ-einnahme" type="button">Einnahme</button>
+          </div>
+
+          <label class="feld-label" id="lbl_datum">Datum</label>
+          <input class="feld" type="date" id="feld-datum" />
+
+          <label class="feld-label" id="lbl_betrag">Betrag</label>
+          <div class="betrag-wrap">
+            <input class="feld" type="text" inputmode="decimal" id="feld-betrag" placeholder="0,00" />
+            <span class="waehrung" id="betrag-waehrung">€</span>
+          </div>
+
+          <label class="feld-label" id="lbl_konto">Konto</label>
+          <select class="feld" id="feld-konto"></select>
+
+          <label class="feld-label" id="lbl_hauptkat">Hauptkategorie</label>
+          <select class="feld" id="feld-hauptkat"></select>
+
+          <label class="feld-label" id="lbl_unterkat">Unterkategorie</label>
+          <select class="feld" id="feld-unterkat"></select>
+
+          <label class="feld-label" id="lbl_beschreibung">Beschreibung</label>
+          <input class="feld" type="text" id="feld-beschreibung" />
+
+          <label class="feld-label" id="lbl_belege">Belege</label>
+          <button class="foto-btn" id="foto-hinzufuegen-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span id="foto_hinzufuegen_label">Foto hinzufügen</span>
+          </button>
+          <div class="foto-vorschau" id="foto-vorschau"></div>
+
+          <button class="knopf-primaer" id="speichern-btn" type="button">Buchung speichern</button>
+          <div id="bearbeiten-buttons" style="display:none;">
+            <button class="knopf-abbrechen" id="abbrechen-btn" type="button">Abbrechen</button>
+            <button class="knopf-speichern-edit" id="speichern-edit-btn" type="button">Änderungen speichern</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Ansicht: Inbox ===== -->
+      <section id="view-inbox" class="ansicht">
+        <div class="ansicht-titel" id="inbox_titel">Inbox</div>
+        <div class="inbox-anzahl" id="inbox-anzahl"></div>
+        <button class="inbox-export-btn" id="export-btn" type="button" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="export_btn_label">Buchungen exportieren</span>
+        </button>
+        <div id="inbox-container"></div>
+      </section>
+
+      <!-- ===== Ansicht: Einstellungen ===== -->
+      <section id="view-einstellungen" class="ansicht">
+        <div class="ansicht-titel" id="einstellungen_titel">Einstellungen</div>
+
+        <div style="font-size:12px; font-weight:600; color:var(--text-leise); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;" id="sprache_titel">Sprache</div>
+        <select class="feld" id="sprache-select" style="margin-bottom:22px;">
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+          <option value="pt_br">Português (BR)</option>
+        </select>
+
+        <div style="font-size:12px; font-weight:600; color:var(--text-leise); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;" id="stammdaten_titel">Stammdaten vom PC</div>
+        <div style="background:var(--flaeche); border-radius:12px; padding:16px;">
+          <!-- Datei-Weg ausgeblendet: Stammdaten kommen jetzt per QR-Code.
+               Zur Reaktivierung diesen Kommentar entfernen.
+          <div style="font-size:14px; color:var(--text-leise); line-height:1.5; margin-bottom:14px;" id="stammdaten_text"></div>
+
+          <button class="knopf-primaer" id="stammdaten-laden-btn" type="button" style="margin-top:0;">
+            <span id="stammdaten_laden_label">Stammdaten laden</span>
+          </button>
+          -->
+
+          <div style="margin-top:14px; display:flex; align-items:flex-start; gap:8px; padding:12px; background:var(--marke-hell); border-radius:8px; font-size:13px; color:var(--text-leise); line-height:1.5;">
+            <svg id="stammdaten-status-icon" style="display:none; width:18px; height:18px; color:var(--erfolg); flex-shrink:0; margin-top:1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span id="stammdaten-status"></span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===== Navigationsleiste ===== -->
+    <nav class="nav">
+      <button class="nav-knopf aktiv" data-ansicht="erfassen" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span id="nav_erfassen_label">Erfassen</span>
+      </button>
+      <button class="nav-knopf" data-ansicht="inbox" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span id="nav_inbox_label">Inbox</span>
+      </button>
+      <button class="nav-knopf" data-ansicht="einstellungen" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span id="nav_einstellungen_label">Einstellungen</span>
+      </button>
+    </nav>
+  </div>
+
+  <input type="file" id="stammdaten-input" accept=".json,application/json" style="display:none" />
+  <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none" />
+  <div id="passwort-overlay" class="overlay" style="display:none;">
+    <div class="modal">
+      <!-- Phase 1: Passwort -->
+      <div id="phase-passwort">
+        <div class="modal-titel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9a2 2 0 0 1 4 0v2"/></svg>
+          <span id="export_titel">Passwort eingeben</span>
+        </div>
+        <p class="modal-text" id="export_text"></p>
+        <input class="modal-feld" type="password" id="passwort1" />
+        <input class="modal-feld" type="password" id="passwort2" />
+        <input class="modal-feld" type="text" id="hinweis-feld" />
+        <div class="modal-hinweis" id="hinweis-anzeige" style="display:none;"></div>
+        <div class="modal-fehler" id="passwort-fehler"></div>
+        <div class="modal-buttons">
+          <button class="modal-abbrechen" id="passwort-abbrechen" type="button">Abbrechen</button>
+          <button class="modal-ok" id="passwort-weiter" type="button">Weiter</button>
+        </div>
+      </div>
+      <!-- Phase 2: Weitergeben -->
+      <div id="phase-weitergeben" style="display:none;">
+        <div class="modal-titel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span id="phase2_titel">Export bereit</span>
+        </div>
+        <p class="modal-text" id="phase2_text"></p>
+        <div class="modal-buttons-export">
+          <button class="modal-speichern" id="phase2-speichern" type="button">Speichern</button>
+          <button class="modal-teilen" id="phase2-teilen" type="button">Teilen</button>
+        </div>
+        <button class="modal-abbrechen-voll" id="phase2-schliessen" type="button">Schließen</button>
+      </div>
+      <!-- Phase 3: Nach Export löschen? -->
+      <div id="phase-loeschen" style="display:none;">
+        <div class="modal-titel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span id="loeschen_titel">Übertragen</span>
+        </div>
+        <p class="modal-text" id="loeschen_text"></p>
+        <div class="modal-buttons">
+          <button class="modal-abbrechen" id="loeschen-nein" type="button">Nein, behalten</button>
+          <button class="modal-ok" id="loeschen-ja" type="button">Ja, löschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script src="lang.js"></script>
+  <script src="speicher.js"></script>
+  <script src="foto.js"></script>
+  <script src="krypto.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
