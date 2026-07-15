@@ -44,6 +44,7 @@ let bereitetesFileTeilen = null;  // File-Objekt fuer das Teilen (.txt-Verpackun
 let installPrompt = null;         // gespeichertes Installations-Angebot des Browsers (Android)
 let installBannerZu = false;      // Nutzer hat das Banner in dieser Sitzung weggetippt
 let exportierteIds = [];          // IDs der zuletzt exportierten Buchungen (fuer die Loesch-Abfrage)
+let letzterExportName = "";       // Dateiname beim SPEICHERN (fuer den Loesch-Hinweis; "" = geteilt)
 
 
 // -------------------------------------------------------------------
@@ -698,6 +699,7 @@ function zeigePhase2() {
 // Phase 2: fertige Datei speichern (herunterladen).
 function speichereBereitetesPaket() {
   if (!bereitetesPaket) return;
+  letzterExportName = bereiterDateiname;   // fuer den Datei-Hinweis in Phase 3
   exportiereDateiSpeichern(bereitetesPaket, bereiterDateiname);
   zeigePhase3();
 }
@@ -709,6 +711,7 @@ async function teileBereitetesPaket() {
   // Direkter Aufruf ohne Umwege -> die frische Beruehrung bleibt erhalten.
   try {
     await navigator.share({ files: [bereitetesFileTeilen] });
+    letzterExportName = "";   // beim Teilen entsteht keine bleibende Datei -> kein Hinweis
     zeigePhase3();
   } catch (e) {
     if (e && e.name === "AbortError") return;   // Nutzer hat abgebrochen
@@ -722,8 +725,15 @@ function zeigePhase3() {
   document.getElementById("phase-passwort").style.display = "none";
   document.getElementById("phase-weitergeben").style.display = "none";
   document.getElementById("phase-loeschen").style.display = "block";
-  document.getElementById("loeschen_text").textContent =
-    t("loeschen_frage", { anzahl: exportierteIds.length });
+
+  let text = t("loeschen_frage", { anzahl: exportierteIds.length });
+  // Nur beim SPEICHERN liegt eine bleibende Datei im Download-Ordner -> Hinweis anhaengen.
+  if (letzterExportName) {
+    text += "\n\n" + t("loeschen_datei_hinweis", { datei: letzterExportName });
+  }
+  const el = document.getElementById("loeschen_text");
+  el.textContent = text;
+  el.style.whiteSpace = "pre-line";   // \n als Zeilenumbruch darstellen
 }
 
 async function loescheExportierteBuchungen() {
