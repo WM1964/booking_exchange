@@ -1,5 +1,5 @@
 // ===================================================================
-//  Diridari Erfassung – App-Logik
+//  BudgetView Erfassung – App-Logik
 //  Etappe C3
 //
 //  Neu gegenueber C2:
@@ -23,6 +23,11 @@ const TEILEN_MIME = "text/csv";
 const TEILEN_ENDUNG = ".csv";
 // Praefix des Export-Dateinamens (zentral aenderbar).
 const EXPORT_PREFIX = "budgetview_export_";
+// Fester Dateiname beim SPEICHERN (ohne Zeitstempel). Dadurch ueberschreibt
+// das Handy beim naechsten Speichern die vorhandene Datei, statt eine weitere
+// im Download-Ordner anzulegen -> der Ordner laeuft nicht mehr voll.
+// Auf "false" setzen, um wieder eindeutige Namen mit Zeitstempel zu erhalten.
+const EXPORT_FESTER_NAME = true;
 
 // Laufzeit-Zustand
 let aktuellerTyp = "ausgabe";  // "ausgabe" oder "einnahme"
@@ -664,13 +669,19 @@ async function _bereiteDateienVor(pw, liste) {
     console.error("Verschluesselung fehlgeschlagen:", e);
     return false;
   }
-  bereitetesPaket = paket;
+bereitetesPaket = paket;
   const stempel = zeitstempelDatei();
   const inhalt = JSON.stringify(bereitetesPaket);
-  bereiterDateiname = EXPORT_PREFIX + stempel + DATEI_ENDUNG;
+  // SPEICHERN: fester Name -> vorhandene Datei wird ueberschrieben, kein Zuwachs.
+  // (Der Zeitstempel-Name bleibt als Rueckfalloption per EXPORT_FESTER_NAME erhalten.)
+  bereiterDateiname = EXPORT_FESTER_NAME
+    ? (EXPORT_PREFIX.replace(/_$/, "") + DATEI_ENDUNG)
+    : (EXPORT_PREFIX + stempel + DATEI_ENDUNG);
   // File-Objekte sofort fertig vorbereiten, damit beim Tippen auf "Speichern"/"Teilen"
   // nur noch die jeweilige Aktion laeuft (frische Beruehrung bleibt erhalten).
   bereitetesFile = new File([inhalt], bereiterDateiname, { type: DATEI_MIME });
+  // TEILEN: hier ist ein Zeitstempel unkritisch (E-Mail/WhatsApp) und vermeidet,
+  // dass gleichnamige Anhaenge verwechselt werden.
   bereitetesFileTeilen = new File([inhalt], EXPORT_PREFIX + stempel + TEILEN_ENDUNG, { type: TEILEN_MIME });
   exportierteIds = liste.map((b) => b.id);   // fuer die Loesch-Abfrage nach dem Export
   return true;
