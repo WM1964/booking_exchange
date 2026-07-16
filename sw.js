@@ -3,7 +3,7 @@
 //  Etappe C2
 // ===================================================================
 
-const CACHE_VERSION = "diridari-v39";
+const CACHE_VERSION = "diridari-v40";
 
 const DATEIEN = [
   "./",
@@ -34,6 +34,14 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Nur eigene App-Dateien (https, gleiche Herkunft) aus dem Cache bedienen.
+  // Lokale HTTP-Adressen (WLAN-Upload-Seite des PCs) NIEMALS abfangen –
+  // sonst liefert der Service Worker dafuer eine leere Seite.
+  const url = event.request.url;
+  if (!url.startsWith("https://") || new URL(url).origin !== self.location.origin) {
+    return;  // ans Netzwerk durchreichen, ohne Eingriff
+  }
+
   event.respondWith(
     caches.match(event.request).then((treffer) => treffer || fetch(event.request))
   );
