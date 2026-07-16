@@ -1036,6 +1036,23 @@ async function optionBPingTest() {
   const adresse = hash.substring(marker.length);   // "ip:port"
   const ziel = "http://" + adresse + "/ping";
 
+  // --- VOLLDIAGNOSE ---
+  let bericht = "ZIEL: " + ziel + "\n";
+  bericht += "SW aktiv: " + (navigator.serviceWorker && navigator.serviceWorker.controller ? "JA" : "NEIN") + "\n";
+  try {
+    const r = await fetch(ziel, { method: "GET", targetAddressSpace: "private" });
+    bericht += "STATUS: " + r.status + "\n";
+    bericht += "TYPE: " + r.type + "\n";
+    bericht += "URL: " + r.url + "\n";
+    const txt = await r.text();
+    bericht += "BODY: " + txt.substring(0, 200);
+  } catch (e) {
+    bericht += "EXCEPTION: " + (e && e.message ? e.message : e);
+  }
+  alert(bericht);
+  return true;
+  // --- ENDE VOLLDIAGNOSE (alter Code darunter wird nicht mehr erreicht) ---
+
   const box = document.createElement("div");
   box.style.cssText = "position:fixed;inset:0;z-index:99999;background:#fff;" +
     "display:flex;flex-direction:column;align-items:center;justify-content:center;" +
