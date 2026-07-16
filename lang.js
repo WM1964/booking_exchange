@@ -100,7 +100,9 @@ const LANG = {
     install_btn:          "Installieren",
     install_ios_hinweis:  "Teilen-Symbol antippen, dann „Zum Home-Bildschirm“.",
     fehler_ungueltig:     "Die Datei ist keine gültige BudgetView-Stammdatendatei.",
-    fehler_lesen:         "Die Datei konnte nicht gelesen werden."
+    fehler_lesen:         "Die Datei konnte nicht gelesen werden.",
+    speicher_sicher:      "Daten dauerhaft gesichert",
+    speicher_unsicher:    "Daten nicht dauerhaft gesichert – App am besten installieren und regelmäßig an den PC übertragen."
   },
   en: {
     app_titel:            "BudgetView",
@@ -190,7 +192,9 @@ const LANG = {
     install_btn:          "Install",
     install_ios_hinweis:  "Tap the Share icon, then “Add to Home Screen”.",
     fehler_ungueltig:     "The file is not a valid BudgetView master data file.",
-    fehler_lesen:         "The file could not be read."
+    fehler_lesen:         "The file could not be read.",
+    speicher_sicher:      "Data stored permanently",
+    speicher_unsicher:    "Data not stored permanently – best install the app and transfer to your PC regularly."
   },
   pt_br: {
     app_titel:            "BudgetView",
@@ -280,7 +284,9 @@ const LANG = {
     install_btn:          "Instalar",
     install_ios_hinweis:  "Toque no ícone Compartilhar e em “Adicionar à Tela de Início”.",
     fehler_ungueltig:     "O arquivo não é um arquivo de dados-mestre válido do BudgetView.",
-    fehler_lesen:         "Não foi possível ler o arquivo."
+    fehler_lesen:         "Não foi possível ler o arquivo.",
+    speicher_sicher:      "Dados armazenados permanentemente",
+    speicher_unsicher:    "Dados não armazenados permanentemente – instale o app e transfira ao PC regularmente."
   }
 };
 

@@ -821,7 +821,31 @@ function aktualisiereStammdatenStatus() {
   statusEl.innerHTML =
     "<b>" + t("status_geladen", { konten: anzahlKonten, kategorien: anzahlKat }) + "</b>" +
     (stand ? "<br><span style='color:#9aa19c;'>" + t("status_stand", { datum: stand }) + "</span>" : "");
-  if (iconEl) iconEl.style.display = "block";
+if (iconEl) iconEl.style.display = "block";
+
+  aktualisiereSpeicherStatus();
+}
+
+// Zeigt in den Einstellungen an, ob der Speicher dauerhaft geschuetzt ist.
+async function aktualisiereSpeicherStatus() {
+  const el = document.getElementById("speicher-status");
+  if (!el) return;
+  try {
+    if (navigator.storage && navigator.storage.persisted) {
+      const dauerhaft = await navigator.storage.persisted();
+      if (dauerhaft) {
+        el.textContent = "\u2713 " + t("speicher_sicher");
+        el.style.color = "#15803d";
+      } else {
+        el.textContent = "\u26a0 " + t("speicher_unsicher");
+        el.style.color = "#b45309";
+      }
+    } else {
+      el.textContent = "";
+    }
+  } catch (e) {
+    el.textContent = "";
+  }
 }
 
 function ladeStammdatenDatei(datei) {
@@ -986,7 +1010,25 @@ function registriereServiceWorker() {
 // -------------------------------------------------------------------
 //  Start
 // -------------------------------------------------------------------
+// Bittet das System, den App-Speicher (IndexedDB + localStorage) dauerhaft zu
+// behalten. Verhindert, dass Buchungen/Stammdaten bei Speicherdruck oder beim
+// Aufraeumen des Browsers automatisch verworfen werden. Bei installierten PWAs
+// gewaehrt Chrome dies meist ohne Rueckfrage.
+async function sichereDauerhaftenSpeicher() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      const schon = await navigator.storage.persisted();
+      if (!schon) {
+        await navigator.storage.persist();
+      }
+    }
+  } catch (e) {
+    console.warn("Dauerhafter Speicher nicht verfuegbar:", e);
+  }
+}
+
 window.addEventListener("load", function () {
+  sichereDauerhaftenSpeicher();
   initSprache();
   setzeAlleTexte();
 
