@@ -3,7 +3,7 @@
 //  Etappe C2
 // ===================================================================
 
-const CACHE_VERSION = "diridari-v38";
+const CACHE_VERSION = "diridari-v39";
 
 const DATEIEN = [
   "./",
@@ -34,21 +34,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = event.request.url;
-
-  // Lokale Netzwerk-Requests (Direktsenden an den PC per WLAN) NICHT abfangen.
-  // Der Service Worker wuerde sonst den fetch neu absetzen und dabei die
-  // Option targetAddressSpace verlieren -> Request scheitert. Solche Requests
-  // muessen unveraendert ans Netzwerk gehen.
-  if (url.startsWith("http://")) {
-    return;  // Standard-Netzwerkverhalten, ohne Service-Worker-Eingriff
-  }
-
-  // Nur GET-Anfragen an die eigenen App-Dateien werden aus dem Cache bedient.
-  if (event.request.method !== "GET") {
-    return;
-  }
-
   event.respondWith(
     caches.match(event.request).then((treffer) => treffer || fetch(event.request))
   );

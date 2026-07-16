@@ -1027,72 +1027,7 @@ async function sichereDauerhaftenSpeicher() {
   }
 }
 
-// --- TEMPORÄRER OPTION-B-PINGTEST (nach Klärung wieder entfernen) ---
-async function optionBPingTest() {
-  const hash = window.location.hash || "";
-  const marker = "#pingtest=";
-  if (!hash.startsWith(marker)) return false;
-
-const adresse = hash.substring(marker.length);   // "ip:port"
-  const ziel = "http://" + adresse + "/ping";
-
-  // Service Worker abmelden, damit er lokale Netzwerk-Requests nicht abfaengt.
-  try {
-    if (navigator.serviceWorker) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const r of regs) { await r.unregister(); }
-    }
-  } catch (e) { /* egal */ }
-
-  // --- VOLLDIAGNOSE ---
-  let bericht = "ZIEL: " + ziel + "\n";
-  bericht += "SW aktiv: " + (navigator.serviceWorker && navigator.serviceWorker.controller ? "JA" : "NEIN") + "\n";
-  try {
-    const r = await fetch(ziel, { method: "GET", targetAddressSpace: "private" });
-    bericht += "STATUS: " + r.status + "\n";
-    bericht += "TYPE: " + r.type + "\n";
-    bericht += "URL: " + r.url + "\n";
-    const txt = await r.text();
-    bericht += "BODY: " + txt.substring(0, 200);
-  } catch (e) {
-    bericht += "EXCEPTION: " + (e && e.message ? e.message : e);
-  }
-  alert(bericht);
-  return true;
-  // --- ENDE VOLLDIAGNOSE (alter Code darunter wird nicht mehr erreicht) ---
-
-  const box = document.createElement("div");
-  box.style.cssText = "position:fixed;inset:0;z-index:99999;background:#fff;" +
-    "display:flex;flex-direction:column;align-items:center;justify-content:center;" +
-    "padding:24px;text-align:center;font-family:sans-serif;";
-  box.innerHTML = "<div style='font-size:18px;font-weight:600;margin-bottom:16px;'>" +
-    "Option-B-Test</div><div id='ping-status' style='font-size:16px;'>Sende Ping an " +
-    adresse + " ...</div>";
-  document.body.appendChild(box);
-  const statusEl = box.querySelector("#ping-status");
-
-  try {
-    const antwort = await fetch(ziel, { method: "GET", targetAddressSpace: "private" });
-    if (antwort.ok) {
-      const daten = await antwort.json();
-      statusEl.innerHTML = "<span style='color:#15803d;font-size:22px;'>✅ Ping OK</span>" +
-        "<br><br>Der direkte Weg funktioniert!<br>Antwort: " + JSON.stringify(daten);
-    } else {
-      statusEl.innerHTML = "<span style='color:#b91c1c;font-size:22px;'>❌ HTTP " +
-        antwort.status + "</span><br><br>Server erreicht, aber Fehlerstatus.";
-    }
-  } catch (e) {
-    statusEl.innerHTML = "<span style='color:#b91c1c;font-size:22px;'>❌ Blockiert</span>" +
-      "<br><br>" + (e && e.message ? e.message : e) +
-      "<br><br>(Mögliche Ursachen: Berechtigung abgelehnt, Chrome zu alt, " +
-      "kein privates Netz, Server nicht erreichbar.)";
-  }
-  return true;
-}
-// --- ENDE TEMPORÄRER PINGTEST ---
-
 window.addEventListener("load", function () {
-  if (optionBPingTest()) { /* Testmodus: normaler Start laeuft trotzdem weiter */ }
   sichereDauerhaftenSpeicher();
   initSprache();
   setzeAlleTexte();
