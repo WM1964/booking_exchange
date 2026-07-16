@@ -726,7 +726,9 @@ function zeigePhase3() {
   document.getElementById("phase-weitergeben").style.display = "none";
   document.getElementById("phase-loeschen").style.display = "block";
 
-  let text = t("loeschen_frage", { anzahl: exportierteIds.length });
+let text = t("loeschen_frage", { anzahl: exportierteIds.length });
+  // TEMPORÄRE DIAGNOSE:
+  text += "\n\n[DIAG name='" + letzterExportName + "' key='" + t("loeschen_datei_hinweis", { datei: "X" }) + "']";
   // Nur beim SPEICHERN liegt eine bleibende Datei im Download-Ordner -> Hinweis anhaengen.
   if (letzterExportName) {
     text += "\n\n" + t("loeschen_datei_hinweis", { datei: letzterExportName });
