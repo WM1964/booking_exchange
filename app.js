@@ -1033,8 +1033,16 @@ async function optionBPingTest() {
   const marker = "#pingtest=";
   if (!hash.startsWith(marker)) return false;
 
-  const adresse = hash.substring(marker.length);   // "ip:port"
+const adresse = hash.substring(marker.length);   // "ip:port"
   const ziel = "http://" + adresse + "/ping";
+
+  // Service Worker abmelden, damit er lokale Netzwerk-Requests nicht abfaengt.
+  try {
+    if (navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) { await r.unregister(); }
+    }
+  } catch (e) { /* egal */ }
 
   // --- VOLLDIAGNOSE ---
   let bericht = "ZIEL: " + ziel + "\n";
