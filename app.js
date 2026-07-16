@@ -675,9 +675,7 @@ bereitetesPaket = paket;
   const inhalt = JSON.stringify(bereitetesPaket);
   // SPEICHERN: fester Name -> vorhandene Datei wird ueberschrieben, kein Zuwachs.
   // (Der Zeitstempel-Name bleibt als Rueckfalloption per EXPORT_FESTER_NAME erhalten.)
-  bereiterDateiname = EXPORT_FESTER_NAME
-    ? (EXPORT_PREFIX.replace(/_$/, "") + DATEI_ENDUNG)
-    : (EXPORT_PREFIX + stempel + DATEI_ENDUNG);
+bereiterDateiname = EXPORT_PREFIX + stempel + DATEI_ENDUNG;
   // File-Objekte sofort fertig vorbereiten, damit beim Tippen auf "Speichern"/"Teilen"
   // nur noch die jeweilige Aktion laeuft (frische Beruehrung bleibt erhalten).
   bereitetesFile = new File([inhalt], bereiterDateiname, { type: DATEI_MIME });
