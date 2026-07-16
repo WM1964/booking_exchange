@@ -3,7 +3,7 @@
 //  Etappe C2
 // ===================================================================
 
-const CACHE_VERSION = "diridari-v34";
+const CACHE_VERSION = "diridari-v35";
 
 const DATEIEN = [
   "./",
